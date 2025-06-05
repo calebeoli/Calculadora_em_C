@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 typedef struct Item{
-    float dados;
+    char dados;
     struct Item *Anterior;
 } Item;
 
@@ -27,15 +27,16 @@ float getValorPosFixa(char *StrPosFixa); // Calcula o valor de Str (na forma pos
 float getValorInFixa(char *StrInFixa);   // Calcula o valor de Str (na forma inFixa)
 
 Pilha *CriaPilha();
-Item *empilhar(Pilha *P, float dados);
+Item *empilhar(Pilha *P, char dados);
 void desempilhar(Pilha *P);
 void mostraPilha(Pilha *P);
 
 int main(){
     Pilha *Calculadora = CriaPilha();
 
-    empilhar(Calculadora, 2);
-    empilhar(Calculadora, 3);
+    empilhar(Calculadora, '2');
+    empilhar(Calculadora, '3');
+    empilhar(Calculadora, '+');
 
     mostraPilha(Calculadora);
 
@@ -51,7 +52,7 @@ int main(){
 }
 
 
-Item *empilhar(Pilha *P,float dados){
+Item *empilhar(Pilha *P,char dados){
     Item *I = (Item *)malloc(sizeof(Item));
 
     if(I == NULL){
@@ -97,7 +98,7 @@ void mostraPilha(Pilha *P){
 
     Item *Atual = P -> topo;
     while (Atual != NULL){
-        printf("%.2f\n", Atual -> dados);
+        printf("%c\n", Atual -> dados);
         Atual = Atual -> Anterior;
     }
 }
