@@ -1,18 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct Item{
-    char dados;
-    struct Item *Anterior;
-} Item;
-
-typedef struct Pilha {
-    int tamanho;
-    Item *topo;
-}Pilha;
+#include <string.h>
 
 
-typedef struct{
+
+typedef struct
+{
     char posFixa[512];
     char inFixa[512];
     float Valor;
@@ -26,79 +19,38 @@ char *getFormaPosFixa(char *Str);        // Retorna a forma posFixa de Str (inFi
 float getValorPosFixa(char *StrPosFixa); // Calcula o valor de Str (na forma posFixa)
 float getValorInFixa(char *StrInFixa);   // Calcula o valor de Str (na forma inFixa)
 
-Pilha *CriaPilha();
-Item *empilhar(Pilha *P, char dados);
-void desempilhar(Pilha *P);
-void mostraPilha(Pilha *P);
+
 
 int main(){
-    Pilha *Calculadora = CriaPilha();
+    getFormaInFixa("9 + (5 * (2 + 8 * 4))");
 
-    empilhar(Calculadora, '2');
-    empilhar(Calculadora, '3');
-    empilhar(Calculadora, '+');
-
-    mostraPilha(Calculadora);
-
-    // Exemplo de desempilhar
-    desempilhar(Calculadora);
-    mostraPilha(Calculadora);
-
-
-
-    free(Calculadora);
-
-    return 0;
+return 0;
 }
 
+char *getFormaInFixa(char *Str) {
+    static char posFixa[512];
+    char operadores[512];
+    int topo = -1, j = 0;
 
-Item *empilhar(Pilha *P,char dados){
-    Item *I = (Item *)malloc(sizeof(Item));
-
-    if(I == NULL){
-        printf("ERRO: Não foi possivel alocar memoria\n");
-        return NULL;
+    for (int i = 0; Str[i] != '\0'; i++) {
+        if (Str[i] == ' ') continue;
+        if (Str[i] >= '0' && Str[i] <= '9') {
+            posFixa[j++] = Str[i];
+            posFixa[j++] = ' ';
+        } else if (Str[i] == '+' || Str[i] == '-' || Str[i] == '*' || Str[i] == '/') {
+           while (topo >= 0) {
+                posFixa[j++] = operadores[topo--];
+                posFixa[j++] = ' ';
+            }
+            operadores[++topo] = Str[i];
+        }
     }
-    I -> dados = dados;
-    I -> Anterior = P->topo;
-    P -> topo = I;
-    P -> tamanho++;
-    return I;
-}
-
-Pilha *CriaPilha(){
-    Pilha *P = (Pilha *)malloc(sizeof(Pilha));
-    if (P == NULL){
-        printf("ERRO: Não foi possivel alocar memoria para a lista!\n");        
-        return NULL;
+    while (topo >= 0) {
+        posFixa[j++] = operadores[topo--];
+        posFixa[j++] = ' ';
+        printf("Parcial: %s\n", posFixa); // imprime a string parcial
     }
-
-    P -> tamanho = 0;
-    P -> topo = NULL;
-
-    return P;
-}
-
-
-
-void desempilhar(Pilha *P){
-
-    if(P -> tamanho == 0){
-        printf("A pilha esta vazia");
-        return;
-    }
-
-    Item *Atual = P->topo;
-    P -> topo = Atual -> Anterior;
-    free(Atual);
-    P-> tamanho--;
-}
-
-void mostraPilha(Pilha *P){
-
-    Item *Atual = P -> topo;
-    while (Atual != NULL){
-        printf("%c\n", Atual -> dados);
-        Atual = Atual -> Anterior;
-    }
+    if (j > 0) posFixa[j-1] = '\0';
+    else posFixa[0] = '\0';
+    return Str;
 }
