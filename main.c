@@ -1,129 +1,77 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include "expressao.h"
 
-
-
-typedef struct
-{
-    char posFixa[512];
-    char inFixa[512];
-    float Valor;
-} Expressao;
-
-// Expressão na forma pos-fixa, como 3 12 4 + *
-// Expressão na forma infixa, como 3 * (12 + 4)
-// Valor numérico da expressão
-char *getFormaInFixa(char *Str);         // Retorna a forma inFixa de Str (posFixa)
-char *getFormaPosFixa(char *Str);        // Retorna a forma posFixa de Str (inFixa)
-float getValorPosFixa(char *StrPosFixa); // Calcula o valor de Str (na forma posFixa)
-float getValorInFixa(char *StrInFixa);   // Calcula o valor de Str (na forma inFixa)
-
-
-
-int main() {
-    printf("Posfixa: %s\n", getFormaInFixa("sen(45) ^2 + 0,5"));
-    return 0;
+// Função para formatar as expressões da tabela para o padrão com espaços
+void format_infix_expression(const char* input, char* output) {
+    int j = 0;
+    for (int i = 0; input[i] != '\0'; ++i) {
+        if (strchr("+-*/%^()", input[i])) {
+            output[j++] = ' ';
+            output[j++] = input[i];
+            output[j++] = ' ';
+        } else {
+            output[j++] = input[i];
+        }
+    }
+    output[j] = '\0';
 }
 
-char *getFormaInFixa(char *Str) {
-    static char posFixa[512];
-    char operadores[512][16]; // Agora cada operador pode ser uma string (para funções)
-    int topo = -1, j = 0;
-    int i = 0;
+int main() {
+    // Array com os testes da tabela do PDF 
+    char *testesPosFixa[] = {
+        "3 4 + 5 *",
+        "7 2 * 4 +",
+        "8 5 2 4 + * +",
+        "6 2 / 3 + 4 *",
+        "9 5 2 8 * 4 + * +",
+        "2 3 + log 5 /",
+        "10 log 3 ^ 2 +",
+        "45 60 + 30 cos *",
+        "45 sen 2 ^ 0.5 +"
+    };
 
-    while (Str[i] != '\0') {
-        if (Str[i] == ' ') {
-            i++;
-            continue;
-        }
+    char *testesInFixaRaw[] = {
+        "(3+4)*5",
+        "7*2+4",
+        "8+(5*(2+4))",
+        "(6/2+3)*4",
+        "9+(5*(2+8*4))",
+        "log(2+3)/5",
+        "(log(10)^3)+2",
+        "(45+60)*cos(30)",
+        "sen(45)^2+0.5"
+    };
 
-        // Lê números (mais de um dígito)
-        if (Str[i] >= '0' && Str[i] <= '9') {
-            while (Str[i] >= '0' && Str[i] <= '9') {
-                posFixa[j++] = Str[i++];
-            }
-            posFixa[j++] = ' ';
-            continue;
-        }
+    int num_testes = sizeof(testesPosFixa) / sizeof(testesPosFixa[0]);
 
-        // Lê funções (ex: cos, sin, log)
-        if ((Str[i] >= 'a' && Str[i] <= 'z') || (Str[i] >= 'A' && Str[i] <= 'Z')) {
-            int k = 0;
-            char func[16] = {0};
-            while ((Str[i] >= 'a' && Str[i] <= 'z') || (Str[i] >= 'A' && Str[i] <= 'Z')) {
-                func[k++] = Str[i++];
-            }
-            func[k] = '\0';
-            strcpy(operadores[++topo], func); // Empilha o nome da função
-            continue;
-        }
+    printf("--- AVALIADOR DE EXPRESSÕES NUMÉRICAS ---\n");
 
-        // Operadores aritméticos (agora inclui ^)
-        if (Str[i] == '+' || Str[i] == '-' || Str[i] == '*' || Str[i] == '/' || Str[i] == '^') {
-            while (topo >= 0 && operadores[topo][0] != '(' &&
-                (
-                    // Prioridade de ^ (associativo à direita)
-                    ((operadores[topo][0] == '^') && (Str[i] != '^')) ||
-                    // Prioridade de * e /
-                    ((operadores[topo][0] == '*' || operadores[topo][0] == '/') && (Str[i] != '^' && Str[i] != '*' && Str[i] != '/')) ||
-                    // Prioridade de + e -
-                    ((operadores[topo][0] == '+' || operadores[topo][0] == '-') && (Str[i] == '+' || Str[i] == '-'))
-                )
-            ) {
-                int k = 0;
-                while (operadores[topo][k] != '\0') posFixa[j++] = operadores[topo][k++];
-                posFixa[j++] = ' ';
-                topo--;
-            }
-            operadores[++topo][0] = Str[i];
-            operadores[topo][1] = '\0';
-            i++;
-            continue;
-        }
+    for (int i = 0; i < num_testes; i++) {
+        printf("\n----------------------------------------\n");
+        printf("Teste %d\n", i + 1);
 
-        // Parêntese de abertura
-        if (Str[i] == '(') {
-            operadores[++topo][0] = '(';
-            operadores[topo][1] = '\0';
-            i++;
-            continue;
-        }
+        // Formata a expressão infixa para ter espaços
+        char testeInFixaFmt[512];
+        format_infix_expression(testesInFixaRaw[i], testeInFixaFmt);
 
-        // Parêntese de fechamento
-        if (Str[i] == ')') {
-            while (topo >= 0 && operadores[topo][0] != '(') {
-                int k = 0;
-                while (operadores[topo][k] != '\0') posFixa[j++] = operadores[topo][k++];
-                posFixa[j++] = ' ';
-                topo--;
-            }
-            if (topo >= 0 && operadores[topo][0] == '(') topo--; // Remove '('
+        // 1. Pós-fixa -> Infixa
+        char* infixa_result = getFormaInFixa(testesPosFixa[i]);
+        printf("Pós-fixa para Infixa: %s -> %s\n", testesPosFixa[i], infixa_result);
 
-            // Se o topo agora for uma função, desempilha ela também
-            if (topo >= 0 && ((operadores[topo][0] >= 'a' && operadores[topo][0] <= 'z') ||
-                              (operadores[topo][0] >= 'A' && operadores[topo][0] <= 'Z'))) {
-                int k = 0;
-                while (operadores[topo][k] != '\0') posFixa[j++] = operadores[topo][k++];
-                posFixa[j++] = ' ';
-                topo--;
-            }
-            i++;
-            continue;
-        }
+        // 2. Infixa -> Pós-fixa
+        char* posfixa_result = getFormaPosFixa(testeInFixaFmt);
+        printf("Infixa para Pós-fixa: %s -> %s\n", testesInFixaRaw[i], posfixa_result);
+        
+        // 3. Avaliar Pós-fixa
+        float valor_posfixa = getValorPosFixa(testesPosFixa[i]);
+        printf("Valor (Pós-fixa): %.2f\n", valor_posfixa);
 
-        // Se não reconheceu, só avança
-        i++;
+        // 4. Avaliar Infixa
+        float valor_infixa = getValorInFixa(testeInFixaFmt);
+        printf("Valor (Infixa):   %.2f\n", valor_infixa);
     }
+    printf("\n----------------------------------------\n");
 
-    // Desempilha o que sobrou
-    while (topo >= 0) {
-        int k = 0;
-        while (operadores[topo][k] != '\0') posFixa[j++] = operadores[topo][k++];
-        posFixa[j++] = ' ';
-        topo--;
-    }
-    if (j > 0) posFixa[j-1] = '\0';
-    else posFixa[0] = '\0';
-    return posFixa;
+    return 0;
 }
